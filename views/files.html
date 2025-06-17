@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文件管理 - 所有文件</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .back-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        .nav-tabs {
+            display: flex;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+
+        .nav-tab {
+            flex: 1;
+            padding: 15px 20px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .nav-tab:hover {
+            background: #f8f9ff;
+        }
+
+        .nav-tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .file-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .file-item {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .file-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .file-preview {
+            width: 100%;
+            height: 150px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8f9fa;
+            overflow: hidden;
+        }
+
+        .file-preview img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: cover;
+        }
+
+        .file-preview video {
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        .file-preview audio {
+            width: 100%;
+        }
+
+        .file-icon {
+            font-size: 3rem;
+            color: #ccc;
+        }
+
+        .file-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            word-break: break-all;
+            font-size: 0.95rem;
+        }
+
+        .file-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .copy-btn {
+            background: #4facfe;
+            color: white;
+        }
+
+        .copy-btn:hover {
+            background: #3182ce;
+        }
+
+        .delete-btn {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .delete-btn:hover {
+            background: #e53e3e;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+
+        .empty-state .icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #4facfe;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .toast.error {
+            background: #ff6b6b;
+        }
+
+        @media (max-width: 768px) {
+            .nav-tabs {
+                flex-direction: column;
+            }
+            
+            .file-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header-content {
+                flex-direction: column;
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <h1>📁 文件管理</h1>
+            <a href="/" class="back-btn">← 返回首页</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="nav-tabs">
+            <button class="nav-tab active" data-type="videos">
+                🎬 视频
+            </button>
+            <button class="nav-tab" data-type="images">
+                🖼️ 图片
+            </button>
+            <button class="nav-tab" data-type="audios">
+                🎵 音频
+            </button>
+            <button class="nav-tab" data-type="documents">
+                📄 文档
+            </button>
+        </div>
+
+        <div id="file-content">
+            <div class="loading">正在加载文件...</div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+        class FileManager {
+            constructor() {
+                this.currentType = 'videos';
+                this.allFiles = {};
+                this.init();
+            }
+
+            async init() {
+                await this.loadFiles();
+                this.bindEvents();
+                this.renderFiles();
+            }
+
+            async loadFiles() {
+                try {
+                    const response = await fetch('/api/files');
+                    this.allFiles = await response.json();
+                } catch (error) {
+                    console.error('加载文件失败:', error);
+                    this.showToast('加载文件失败', 'error');
+                }
+            }
+
+            bindEvents() {
+                // 标签页切换
+                document.querySelectorAll('.nav-tab').forEach(tab => {
+                    tab.addEventListener('click', (e) => {
+                        this.switchTab(e.target.dataset.type);
+                    });
+                });
+            }
+
+            switchTab(type) {
+                this.currentType = type;
+                
+                // 更新标签页状态
+                document.querySelectorAll('.nav-tab').forEach(tab => {
+                    tab.classList.remove('active');
+                });
+                document.querySelector(`[data-type="${type}"]`).classList.add('active');
+                
+                this.renderFiles();
+            }
+
+            renderFiles() {
+                const container = document.getElementById('file-content');
+                const files = this.allFiles[this.currentType] || [];
+
+                if (files.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="icon">${this.getTypeIcon(this.currentType)}</div>
+                            <h3>暂无${this.getTypeName(this.currentType)}文件</h3>
+                            <p>您可以前往上传页面添加文件</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const fileGrid = files.map(fileUrl => {
+                    const fileName = this.getFileNameFromUrl(fileUrl);
+                    return `
+                        <div class="file-item">
+                            <div class="file-preview">
+                                ${this.renderPreview(fileUrl, this.currentType)}
+                            </div>
+                            <div class="file-name">${fileName}</div>
+                            <div class="file-actions">
+                                <button class="action-btn copy-btn" onclick="fileManager.copyUrl('${fileUrl}')">
+                                    复制链接
+                                </button>
+                                <button class="action-btn delete-btn" onclick="fileManager.deleteFile('${fileName}', '${this.currentType}')">
+                                    删除文件
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                container.innerHTML = `<div class="file-grid">${fileGrid}</div>`;
+            }
+
+            renderPreview(fileUrl, type) {
+                switch (type) {
+                    case 'images':
+                        return `<img src="${fileUrl}" alt="图片预览" onerror="this.style.display='none'">`;
+                    case 'videos':
+                        return `<video controls preload="metadata">
+                                    <source src="${fileUrl}" type="video/mp4">
+                                    您的浏览器不支持视频播放
+                                </video>`;
+                    case 'audios':
+                        return `<audio controls preload="metadata">
+                                    <source src="${fileUrl}">
+                                    您的浏览器不支持音频播放
+                                </audio>`;
+                    case 'documents':
+                        return `<div class="file-icon">${this.getTypeIcon(type)}</div>`;
+                    default:
+                        return `<div class="file-icon">${this.getTypeIcon(type)}</div>`;
+                }
+            }
+
+            getTypeIcon(type) {
+                const icons = {
+                    videos: '🎬',
+                    images: '🖼️',
+                    audios: '🎵',
+                    documents: '📄'
+                };
+                return icons[type] || '📁';
+            }
+
+            getTypeName(type) {
+                const names = {
+                    videos: '视频',
+                    images: '图片',
+                    audios: '音频',
+                    documents: '文档'
+                };
+                return names[type] || '文件';
+            }
+
+            getFileNameFromUrl(url) {
+                return url.split('/').pop();
+            }
+
+            getFullUrl(url) {
+                if (url.startsWith('http://') || url.startsWith('https://')) {
+                    // 如果已经是完整URL，直接返回
+                    return url;
+                } else if (url.startsWith('/')) {
+                    // 如果是绝对路径，拼接域名
+                    return window.location.origin + url;
+                } else {
+                    // 如果是相对路径，添加斜杠后拼接
+                    return window.location.origin + '/' + url;
+                }
+            }
+            
+            async copyUrl(url) {
+                try {
+                    const fullUrl = this.getFullUrl(url);
+                    
+                    // 方法1：尝试使用现代 Clipboard API
+                    if (navigator.clipboard && window.isSecureContext) {
+                        await navigator.clipboard.writeText(fullUrl);
+                        this.showToast('链接已复制到剪贴板');
+                        return;
+                    }
+                    
+                    // 方法2：使用传统的 execCommand 方法作为备用
+                    const textArea = document.createElement('textarea');
+                    textArea.value = fullUrl;
+                    textArea.style.position = 'fixed';
+                    textArea.style.left = '-999999px';
+                    textArea.style.top = '-999999px';
+                    document.body.appendChild(textArea);
+                    textArea.focus();
+                    textArea.select();
+                    
+                    const successful = document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    
+                    if (successful) {
+                        this.showToast('链接已复制到剪贴板');
+                    } else {
+                        throw new Error('execCommand 复制失败');
+                    }
+                    
+                } catch (error) {
+                    console.error('复制失败:', error);
+                    this.showCopyDialog(this.getFullUrl(url));
+                }
+            }
+
+            async deleteFile(fileName, type) {
+                if (!confirm(`确定要删除文件 "${fileName}" 吗？此操作不可恢复。`)) {
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`/api/files/${type}/${fileName}`, {
+                        method: 'DELETE'
+                    });
+
+                    if (response.ok) {
+                        this.showToast('文件删除成功');
+                        await this.loadFiles();
+                        this.renderFiles();
+                    } else {
+                        const error = await response.json();
+                        this.showToast(error.error || '删除失败', 'error');
+                    }
+                } catch (error) {
+                    console.error('删除文件失败:', error);
+                    this.showToast('删除失败，请稍后重试', 'error');
+                }
+            }
+
+            showToast(message, type = 'success') {
+                const toast = document.getElementById('toast');
+                toast.textContent = message;
+                toast.className = `toast ${type}`;
+                toast.classList.add('show');
+
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 3000);
+            }
+
+            showCopyDialog(url) {
+                // 创建模态对话框
+                const dialog = document.createElement('div');
+                dialog.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: rgba(0,0,0,0.5);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 10000;
+                `;
+                
+                dialog.innerHTML = `
+                    <div style="
+                        background: white;
+                        padding: 30px;
+                        border-radius: 12px;
+                        max-width: 500px;
+                        width: 90%;
+                        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+                    ">
+                        <h3 style="margin-bottom: 15px; color: #333;">手动复制链接</h3>
+                        <p style="margin-bottom: 15px; color: #666;">
+                            自动复制失败，请手动复制以下链接：
+                        </p>
+                        <input type="text" value="${url}" readonly style="
+                            width: 100%;
+                            padding: 10px;
+                            border: 2px solid #ddd;
+                            border-radius: 6px;
+                            font-size: 14px;
+                            margin-bottom: 20px;
+                            background: #f8f9fa;
+                        " id="manual-copy-input">
+                        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                            <button onclick="this.closest('div').parentElement.remove()" style="
+                                padding: 8px 16px;
+                                border: 1px solid #ddd;
+                                background: white;
+                                border-radius: 6px;
+                                cursor: pointer;
+                            ">关闭</button>
+                            <button onclick="document.getElementById('manual-copy-input').select(); this.textContent='已选中'" style="
+                                padding: 8px 16px;
+                                border: none;
+                                background: #4facfe;
+                                color: white;
+                                border-radius: 6px;
+                                cursor: pointer;
+                            ">选中文本</button>
+                        </div>
+                    </div>
+                `;
+                
+                document.body.appendChild(dialog);
+                
+                // 点击背景关闭对话框
+                dialog.addEventListener('click', (e) => {
+                    if (e.target === dialog) {
+                        dialog.remove();
+                    }
+                });
+                
+                // 自动选中输入框内容
+                setTimeout(() => {
+                    const input = document.getElementById('manual-copy-input');
+                    input.focus();
+                    input.select();
+                }, 100);
+            }
+            
+        }
+
+        // 初始化文件管理器
+        const fileManager = new FileManager();
+    </script>
+</body>
+</html>
