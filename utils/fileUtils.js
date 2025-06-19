@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const serverConfig = require('../config/server');
 
 /**
  * 生成Windows风格的文件名（处理重名）
@@ -30,13 +31,7 @@ function generateWindowsStyleFilename(uploadPath, originalName) {
  * @returns {boolean} 是否允许上传
  */
 function validateFileType(type, mimeType) {
-    const mimeConfig = {
-        videos: ['video/'],
-        images: ['image/'],
-        audios: ['audio/'],
-        documents: ['application/']
-    };
-    
+    const mimeConfig = serverConfig.MIME_TYPES;
     const allowedMimes = mimeConfig[type];
     if (!allowedMimes) return false;
     
